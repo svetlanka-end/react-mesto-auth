@@ -174,18 +174,23 @@ function App() {
   React.useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      api.getContent(token).then((data) => {
-        if (data) {
-          changeLoggedIn();
+      api
+        .getContent(token)
+        .then((data) => {
+          if (data) {
+            changeLoggedIn();
 
-          setDataUser({
-            email: data.data.email,
-            _id: data.data._id,
-          });
+            setDataUser({
+              email: data.data.email,
+              _id: data.data._id,
+            });
 
-          history.push("/");
-        }
-      });
+            history.push("/");
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     }
   }, []);
 
