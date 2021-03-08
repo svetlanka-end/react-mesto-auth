@@ -12,6 +12,7 @@ import Login from "./Login";
 import Register from "./Register";
 import React from "react";
 import api from "../utils/api";
+import auth from "../utils/auth";
 import {
   CurrentUserContext,
   DataUserContext,
@@ -20,21 +21,21 @@ import { Route, Switch } from "react-router-dom";
 import { useHistory } from "react-router-dom";
 
 function App() {
-  const [isEditProfilePopupOpen, setEditProfilePopupOpen] = React.useState(
+  const [isEditProfilePopupOpen, setIsEditProfilePopupOpen] = React.useState(
     false
   );
   const [isAddPlacePopupOpen, setAddPlacePopupOpen] = React.useState(false);
   const [isEditAvatarPopupOpen, setEditAvatarPopupOpen] = React.useState(false);
-  const [selectedCard, handleCardClick] = React.useState();
+  const [isSelectedCard, setSelectedCard] = React.useState();
   const [InfoTooltipPopupOpen, setInfoTooltipPopupOpen] = React.useState(false);
 
   const [registrationStatus, setRegistrationStatus] = React.useState(false);
 
   function closeAllPopups() {
     setEditAvatarPopupOpen(false);
-    setEditProfilePopupOpen(false);
+    setIsEditProfilePopupOpen(false);
     setAddPlacePopupOpen(false);
-    handleCardClick();
+    setSelectedCard();
     setInfoTooltipPopupOpen(false);
   }
 
@@ -42,7 +43,7 @@ function App() {
 
   const handleInfoTooltipPopupOpen = () => setInfoTooltipPopupOpen(true);
 
-  const handleEditProfileClick = () => setEditProfilePopupOpen(true);
+  const handleEditProfileClick = () => setIsEditProfilePopupOpen(true);
 
   const handleAddPlaceClick = () => setAddPlacePopupOpen(true);
 
@@ -53,7 +54,7 @@ function App() {
     api
       .getProfileValues()
       .then((result) => {
-        helpSetCurrentUser(result);
+        setCurrentUser(result);
       })
       .catch((err) => {
         console.log(err);
@@ -64,7 +65,7 @@ function App() {
     api
       .setUserInfo(opt)
       .then((result) => {
-        helpSetCurrentUser(result);
+        setCurrentUser(result);
         closeAllPopups();
       })
       .catch((err) => {
@@ -76,21 +77,12 @@ function App() {
     api
       .submitNewAvatar(opt)
       .then((result) => {
-        helpSetCurrentUser(result);
+        setCurrentUser(result);
         closeAllPopups();
       })
       .catch((err) => {
         console.log(err);
       });
-  }
-
-  function helpSetCurrentUser(result) {
-    setCurrentUser({
-      name: result.name,
-      about: result.about,
-      avatar: result.avatar,
-      _id: result._id,
-    });
   }
 
   // Получение массива карточек
@@ -100,13 +92,6 @@ function App() {
   React.useEffect(() => {
     api
       .getArrCard()
-      .then((res) => {
-        if (res.ok) {
-          return res.json();
-        } else {
-          return Promise.reject(`Ошибка: ${res.status}`);
-        }
-      })
       .then((result) => {
         setCards(result);
       })
@@ -174,7 +159,7 @@ function App() {
   React.useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      api
+      auth
         .getContent(token)
         .then((data) => {
           if (data) {
@@ -194,6 +179,50 @@ function App() {
     }
   }, []);
 
+  function handleSubmitLogin(e, userEmail, userPassword) {
+    e.preventDefault();
+    auth
+      .authorize(userEmail, userPassword)
+      .then((res) => {
+        if (res.token) {
+          setDataUser({
+            email: userEmail,
+          });
+          localStorage.setItem("token", res.token);
+          changeLoggedIn();
+          history.push("/");
+        }
+      })
+      .catch((err) => {
+        setRegistrationStatus(false);
+        handleInfoTooltipPopupOpen();
+        console.log(err);
+      });
+  }
+
+  function handleSubmitRegister(e, userEmail, userPassword) {
+    e.preventDefault();
+    auth
+      .register(userEmail, userPassword)
+      .then((res) => {
+        if (res.data) {
+          localStorage.setItem(
+            "user",
+            JSON.stringify({
+              email: res.data.email,
+              _id: res.data._id,
+            })
+          );
+          setRegistrationStatus(true);
+          handleInfoTooltipPopupOpen();
+        }
+      })
+      .catch(() => {
+        setRegistrationStatus(false);
+        handleInfoTooltipPopupOpen();
+      });
+  }
+
   return (
     <CurrentUserContext.Provider value={currentUser}>
       <DataUserContext.Provider value={dataUser}>
@@ -202,10 +231,7 @@ function App() {
             <Header />
             <Switch>
               <Route path="/sign-up">
-                <Register
-                  popupOpen={handleInfoTooltipPopupOpen}
-                  setRegistrationStatus={setRegistrationStatus}
-                />
+                <Register handleSubmit={handleSubmitRegister} />
                 <InfoTooltip
                   isOpen={InfoTooltipPopupOpen}
                   onClose={closeAllPopups}
@@ -213,11 +239,7 @@ function App() {
                 />
               </Route>
               <Route path="/sign-in">
-                <Login
-                  changeLoggedIn={changeLoggedIn}
-                  popupOpen={handleInfoTooltipPopupOpen}
-                  setRegistrationStatus={setRegistrationStatus}
-                />
+                <Login handleSubmit={handleSubmitLogin} />
                 <InfoTooltip
                   isOpen={InfoTooltipPopupOpen}
                   onClose={closeAllPopups}
@@ -229,7 +251,7 @@ function App() {
                   onEditAvatar={handleEditAvatarClick}
                   onEditProfile={handleEditProfileClick}
                   onAddPlace={handleAddPlaceClick}
-                  handleCardClick={handleCardClick}
+                  handleCardClick={setSelectedCard}
                   cards={cards}
                   onCardLike={handleCardLike}
                   onCardDelete={handleCardDelete}
@@ -253,7 +275,7 @@ function App() {
                   onUpdateAvatar={handleUpdateAvatar}
                 />
 
-                <ImagePopup card={selectedCard} onClose={closeAllPopups} />
+                <ImagePopup card={isSelectedCard} onClose={closeAllPopups} />
                 <Footer />
               </ProtectedRoute>
             </Switch>

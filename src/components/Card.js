@@ -42,6 +42,7 @@ function Card(props) {
         className="grid__photo"
         src={props.card.link}
         onClick={handleClick}
+        alt={props.card.name}
       />
       <div className="grid__info">
         <h2 className="grid__name">{props.card.name}</h2>

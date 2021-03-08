@@ -15,26 +15,7 @@ function Register(props) {
   };
 
   function handleSubmit(e) {
-    e.preventDefault();
-    api
-      .register(userEmail, userPassword)
-      .then((res) => {
-        if (res.data) {
-          localStorage.setItem(
-            "user",
-            JSON.stringify({
-              email: res.data.email,
-              _id: res.data._id,
-            })
-          );
-          props.setRegistrationStatus(true);
-          props.popupOpen();
-        }
-      })
-      .catch(() => {
-        props.setRegistrationStatus(false);
-        props.popupOpen();
-      });
+    props.handleSubmit(e, userEmail, userPassword);
   }
 
   return (

@@ -21,6 +21,7 @@ function InfoTooltip(props) {
         <img
           src={props.registrationStatus ? imgOk : imgError}
           className="popup__info-photo"
+          alt={props.registrationStatus ? "Успешно" : "Ошибка"}
         ></img>
         <button type="button" className="popup__close" onClick={closePopup} />
         <h3 className="popup__title popup__title_place_info">

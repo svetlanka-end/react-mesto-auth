@@ -1,13 +1,8 @@
 import React from "react";
-import api from "../utils/api";
-import { useHistory } from "react-router-dom";
-import { DataUserContext } from "../contexts/CurrentUserContext";
 
 function Login(props) {
   const [userEmail, setUserEmail] = React.useState("");
   const [userPassword, setUserPassword] = React.useState("");
-  const history = useHistory();
-  const dataUser = React.useContext(DataUserContext);
 
   const handleUserEmail = (e) => {
     setUserEmail(e.target.value);
@@ -18,22 +13,7 @@ function Login(props) {
   };
 
   function handleSubmit(e) {
-    e.preventDefault();
-    api
-      .authorize(userEmail, userPassword)
-      .then((res) => {
-        if (res.token) {
-          dataUser.email = userEmail;
-          localStorage.setItem("token", res.token);
-          props.changeLoggedIn();
-          history.push("/");
-        }
-      })
-      .catch((err) => {
-        props.setRegistrationStatus(false);
-        props.popupOpen();
-        console.log(err);
-      });
+    props.handleSubmit(e, userEmail, userPassword);
   }
 
   return (
